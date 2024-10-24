@@ -7,6 +7,7 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(rvest)
+library(readxl)
 set.seed(1)
 
 ```
@@ -48,3 +49,116 @@ z_scores(x=3)
 z_scores(x=c("My","name","is"))
 ```
 
+## A new function!
+
+```{r}
+mean_and_sd = function(x){
+  mean_x=mean(x)
+  sd_x=sd(x)
+  
+  out_df=
+    tibble(
+      mean=mean_x,
+      sd=sd_x
+    )
+  
+  return(out_df)
+}
+
+mean_and_sd(x_vec)
+```
+
+## Check stuff using a simulation
+
+```{r}
+sim_df=
+  tibble(
+    x=rnorm(30,10,5)
+  )
+
+sim_df |> 
+  summarize(
+    mean=mean(x),
+    sd=sd(x)
+  )
+```
+
+Simulation function to check sample mean and sd.
+
+```{r}
+sim_mean_sd = function(sample_size=30, true_mean=10, true_sd=2){
+  sim_df=
+  tibble(
+    x=rnorm(sample_size,true_mean,true_sd)
+  )
+
+ out_df =
+  sim_df |> 
+  summarize(
+    mean=mean(x),
+    sd=sd(x)
+  )
+  
+  return(out_df)
+}
+
+sim_mean_sd(sample_size=30, true_mean=4, true_sd =12) ##can rewrite default num
+sim_mean_sd()
+```
+
+## Revists
+```{r}
+lotr_import = function(cell_range, movie_title){
+  movie_df=
+    read_excel("data/LotR_Words.xlsx", range=cell_range) |> 
+    mutate(movie="movie_title") |> 
+    janitor::clean_names() |> 
+    pivot_longer(
+      female:male,
+      names_to ="sex",
+      values_to = "words"
+    ) |> 
+    select(movie,everything())
+  
+  return(movie_df)
+}
+
+lotr_df=
+  bind_rows(
+    lotr_import("B3:D6","fellowship"),
+    lotr_import("F3:H6","two_towers"),
+    lotr_import("J3:L6","return_king")
+  )
+```
+
+
+## NSDUH
+```{r}
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm" ##put outside the function because each time the function would download from html
+
+nsduh_html = read_html(nsduh_url)
+
+drug_import=function(name, num_table,html){
+  drug_df=
+    nsduh_html |>  ##looking outside the function body, add into input
+    html_table() |> 
+    nth(num_table) |> 
+    slice(-1) |> 
+    mutate(drug ="name") |> 
+    select(-contains("P Value"))
+  
+  return(drug_df)
+}
+
+bind_rows(
+  drug_import(html=nsduh_html,"marj",1),
+  drug_import(html=nsduh_html,"cocaine",5)
+  
+)
+
+```
+
+do this instead:
+dont need to see this function in r file,
+use for many rmd
+source
